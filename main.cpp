@@ -43,13 +43,14 @@ std::wstring indentStr(std::wstring str, int n)
 	return std::wstring(ident > 0 ? ident : 0, L' ') + str;
 }
 
-void PrintFileInfo(const std::filesystem::path& fileinfo)
+void PrintFileInfo(const std::filesystem::path& fileinfo, int64_t &totalSize)
 {
 	std::wstring sResult(fileinfo);
 	sResult += L" [";
 	try
 	{
 		const auto fsize = std::filesystem::file_size(fileinfo);
+		totalSize += fsize;
 		sResult += indentStr(std::to_wstring(fsize), 1);
 		setConsoleColor(COLOR_DEFAULT);
 	}
@@ -70,7 +71,7 @@ void PrintFileInfo(const std::filesystem::path& fileinfo)
 	setConsoleColor(COLOR_DEFAULT);
 }
 
-void DirInfo(const std::filesystem::path& path)
+void DirInfo(const std::filesystem::path& path, int64_t &totalSize)
 {
 	try
 	{
@@ -80,11 +81,11 @@ void DirInfo(const std::filesystem::path& path)
 			{
 				if (std::filesystem::is_directory(fd.path()))
 				{
-					DirInfo(fd.path());
+					DirInfo(fd.path(), totalSize);
 				}
 				else
 				{
-					PrintFileInfo(fd.path());
+					PrintFileInfo(fd.path(), totalSize);
 				}
 			}
 		}
@@ -133,9 +134,10 @@ int wmain(int argc, wchar_t* argv[])
 		path = std::filesystem::current_path();
 	}
 
+	int64_t totalSize = 0;
 	if (std::filesystem::is_regular_file(path))
 	{
-		PrintFileInfo(path);
+		PrintFileInfo(path, totalSize);
 		return 0;
 	}
 
@@ -147,7 +149,9 @@ int wmain(int argc, wchar_t* argv[])
 		return 1;
 	}
 
-	DirInfo(path);
+	DirInfo(path, totalSize);
+
+	std::wcout << L"Total size: [" << totalSize << "]" << std::endl;
 
 	return 0;
 }
